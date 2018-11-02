@@ -23,13 +23,15 @@ def insert_doc(file_path, text):
   # print("text is here: ", text)
   collection.insert(file_document)
 
-insert_doc(test_file_path, text)
+### INSERT ALL DOCUMENTS FROM ENRON ###
+
+# def insert_all_docs(directory):
+
 
 ### RETRIEVE DOCUMENT ###
 
 def retrieve_doc(file_path):
   retrieved_doc = collection.find_one({"file_path": file_path})
-retrieve_doc(test_file_path)
 ## TO-DO: Retrieval of the document is working but need to make sure that 
 ## newlines aren't stored in such a weird way
 
@@ -38,20 +40,6 @@ retrieve_doc(test_file_path)
 def retrieve_all_docs():
   retrieved_docs = collection.find( {} )
   print("All docs: ", retrieved_docs.count())
-
-retrieve_all_docs() ## verified that it keeps inserting redundent files into the DB correctly across many instances
-
-### SEARCH ###
-## Right now, just searches by seeing if the index for the word exists in the document ##
-## TO-DO: Support multi-word searches ##
-def search(term):
-  query = "indexes." + term
-  retrieved_docs = collection.find( { query: 1 })
-  print("searched docs: ", retrieved_docs.count())
-  print("searched doc #1: ", retrieved_docs[0])
-
-search("heather")
-##def insert_all_enron_docs(directory):
 
 
 ######## HELPER FUNCTIONS ########
@@ -62,9 +50,18 @@ def split_text(text):
   for c in text:
     if (c.isalpha()):
       word = word + c
+      if (word not in words_in_text):
+        words_in_text[word] = 1
     else:
       if len(word)> 0:
         words_in_text[word] = 1
       word = ""
   return words_in_text
+
+### RUN COMMANDS ####
+
+insert_doc(test_file_path, text)
+retrieve_doc(test_file_path) 
+retrieve_all_docs() ## verified that it keeps inserting redundent files into the DB correctly across many instances
+
 
