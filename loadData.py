@@ -3,6 +3,8 @@
 ######## DB SETUP ########
 
 from pymongo import MongoClient
+import os
+import glob
 
 client = MongoClient();
 db = client.EnronDB ## our DB is called EnronDB
@@ -25,8 +27,34 @@ def insert_doc(file_path, text):
 
 ### INSERT ALL DOCUMENTS FROM ENRON ###
 
-# def insert_all_docs(directory):
+def insert_all_docs(directory):
+  all_files = []
+  for path, subdirs, files in os.walk(directory):
+    if isinstance(files, list):
+      for name in files:
+          if not name.startswith('.'):
+            doc = create_doc(os.path.join(path, name))
+            if len(all_files) > 1000:
+              try:
+                print("inserting: ", len(all_files))
+                collection.insert_many(all_files)
+                all_files = []
+              except:
+                all_files = []
+                print('error in inserting')
+            all_files.append(doc)
 
+
+def create_doc(file_path):
+  with open(file_path) as f: ## opens a test file
+    try:
+      text = f.read()
+
+      indexes = split_text(text)
+      file_document = {"file_path": file_path, "text": text, "indexes": indexes}
+      return file_document
+    except:
+      print('error')
 
 ### RETRIEVE DOCUMENT ###
 
@@ -50,18 +78,18 @@ def split_text(text):
   for c in text:
     if (c.isalpha()):
       word = word + c
-      if (word not in words_in_text):
+      if (word not in words_in_text): ## check if the characters are already indexed
         words_in_text[word] = 1
     else:
-      if len(word)> 0:
-        words_in_text[word] = 1
       word = ""
   return words_in_text
 
 ### RUN COMMANDS ####
 
-insert_doc(test_file_path, text)
-retrieve_doc(test_file_path) 
-retrieve_all_docs() ## verified that it keeps inserting redundent files into the DB correctly across many instances
+# insert_doc(test_file_path, text)
+# retrieve_doc(test_file_path) 
+# retrieve_all_docs() ## verified that it keeps inserting redundent files into the DB correctly across many instances
+
+insert_all_docs('./maildir')
 
 
