@@ -1,32 +1,19 @@
-## This file contains inserting and deleting documents into the database as functions.
+## This file contains inserting all enron documents into the database.
 
 ######## DB SETUP ########
 
 from pymongo import MongoClient
 import os
-import glob
 
 client = MongoClient();
 db = client.EnronDB ## our DB is called EnronDB
 collection = db.emails ## create a collection within EnronDB called emails
-## TO-DO: text key too large to index
-# collection.create_index("file_path")
 
-######## DB QUERY FUNCTIONS ########
+######## INSERT ALL DOCUMENTS FROM ENRON #########
 
-### INSERT DOCUMENT ###
-test_file_path = 'maildir/allen-p/inbox/1.'
-f = open(test_file_path) ## opens a test file
-text = f.read()
-
-def insert_doc(file_path, text):
-  indexes = split_text(text)
-  file_document = {"file_path": file_path, "text": text, "indexes": indexes}
-  # print("text is here: ", text)
-  collection.insert(file_document)
-
-### INSERT ALL DOCUMENTS FROM ENRON ###
-
+## Inserts documents in batches to mongodb.
+## Walks through the directory with all the emails, goes through all subdirectories, and creates
+## an object for each file. Stores these files to mongodb in batches of 1000, an arbitrary starting number.
 def insert_all_docs(directory):
   all_files = []
   for path, subdirs, files in os.walk(directory):
@@ -44,9 +31,14 @@ def insert_all_docs(directory):
                 print('error in inserting')
             all_files.append(doc)
 
-
+## Creates a json format object that mongodb can accept.
+## it opens the file at the test site, reads the text, splits all of the text into appropriate indexes
+## including prefix strings, and returns this object.
+## Sometimes, you can't read the file and this throws an error.
+##
+## TO-DO: investigate why you can't read the file sometimes.
 def create_doc(file_path):
-  with open(file_path) as f: ## opens a test file
+  with open(file_path) as f: ## opens the file
     try:
       text = f.read()
 
@@ -56,27 +48,14 @@ def create_doc(file_path):
     except:
       print('error')
 
-### RETRIEVE DOCUMENT ###
-
-def retrieve_doc(file_path):
-  retrieved_doc = collection.find_one({"file_path": file_path})
-## TO-DO: Retrieval of the document is working but need to make sure that 
-## newlines aren't stored in such a weird way
-
-### RETRIEVE ALL DOCUMENTS ###
-
-def retrieve_all_docs():
-  retrieved_docs = collection.find( {} )
-  print("All docs: ", retrieved_docs.count())
-
-
 ######## HELPER FUNCTIONS ########
 
+## splits text into a dictionary containing all indexes: words and prefixes.
 def split_text(text):
   words_in_text = {}
   word = ""
   for c in text:
-    if (c.isalpha()):
+    if (c.isalpha()): # checks if the character is a letter. This is how we define a word.
       word = word + c
       if (word not in words_in_text): ## check if the characters are already indexed
         words_in_text[word] = 1
@@ -85,10 +64,6 @@ def split_text(text):
   return words_in_text
 
 ### RUN COMMANDS ####
-
-# insert_doc(test_file_path, text)
-# retrieve_doc(test_file_path) 
-# retrieve_all_docs() ## verified that it keeps inserting redundent files into the DB correctly across many instances
 
 insert_all_docs('./maildir')
 
