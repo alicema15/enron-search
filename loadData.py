@@ -41,12 +41,11 @@ def create_doc(file_path):
   with open(file_path) as f: ## opens the file
     try:
       text = f.read()
-
       indexes = split_text(text)
       file_document = {"file_path": file_path, "text": text, "indexes": indexes}
       return file_document
     except:
-      print('error')
+      print('error opening file: ', file_path)
 
 ######## HELPER FUNCTIONS ########
 
